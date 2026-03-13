@@ -49,10 +49,76 @@ async function main(name) {
 
         switch (event.type) {
             case "PushEvent":
-                const count = pushCommits[repo];
-                console.log(`- Pushed ${count} commit${count !== 1 ? "s" : ""} to ${repo}`);
+                if(!reportedPushRepos.has()) {
+                    const count = pushCommits[repo];
+                    console.log(`- Pushed ${count} commit${count !== 1 ? "s" : ""} to ${repo}`);
+                    reportedPushRepos.add(repo);
+                }
                 break;
-        
+            
+            case "IssueCommentEvent":
+                console.log(`- Commented on an issue in ${repo}`);
+                break;
+
+            case "CommitCommentEvent":
+                console.log(`-Commented on a commit in ${repo} `)
+                break;
+
+            case "WatchEvent":
+                console.log(`- Starred ${repo}`);
+                break;
+
+            case "CreateEvent": {
+                const refType = event.payload?.ref_type;
+                const ref = event.payload?.ref;
+
+                if(refType === "repository") {
+                    console.log(`- Created a new repository ${repo}`);
+                } else if (refType === "branch") {
+                    console.log(`- Created a new branch "${ref}" in ${repo}`);
+                } else if (refType === "tag") {
+                    console.log(`- Created a new tag "${ref}" in ${repo}`);
+                } else {
+                    console.log(`- Created ${refType} in ${repo}`);
+                }
+                break;
+            }
+            
+
+            case "PullRequestEvent": {
+                const action = event.payload?.action;
+                const prTitle = event.payload?.pull_request?.title;
+
+                if(action === "opened") {
+                    console.log(`- Opened a new pull request in ${repo}${prTitle ? `: ${prTitle}`: ""}`)
+                } else if (action === "closed") {
+                    const merged = event.payload?.pull_request?.merged;
+                    console.log(`- ${merged ? "Merged" : "Closed"} a pull request in ${repo}${prTitle ? `:"${prTitle}"` : ""}`);
+                } else {
+                    console.log(`- ${action} a pull request in ${repo}`);
+                }
+                break;
+            
+            }
+                
+            case "DeleteEvent": {
+                const refType = event.payload?.ref_type;
+                const ref = event.payload?.ref;
+                console.log(`- Deleted ${refType} "${ref}" in ${repo}`);
+                break;
+            }
+
+            case "DiscussionEvent": {
+                console.log(`- Created a discussion ${repo}`);
+                break;
+            }
+
+            case "ForkEvent": {
+                const forkee = event.payload?.forkee?.full_name || repo;
+                console.log(`- Forked ${repo} to ${forkee}`);
+                break;
+            }
+            
             default:
                 console.log(`- ${event.type.replace("Event", "")} event in ${repo}`);
                 break;
@@ -65,11 +131,11 @@ async function main(name) {
 
 
 
-const arg = process.argv[2];
+const username = process.argv[2];
 
-if (!arg) {
+if (!username) {
     console.error("Usage: github-activity <username>");
     process.exit(1);
 }
 
-main(arg);
+main(username);
