@@ -1,20 +1,19 @@
 #!/usr/bin/env node
 
-
 //Function to fetch the github-activity
 async function main(name) {
     let data;
 
     try {
         const response = await fetch(`https://api.github.com/users/${name}/events`);
-        data = await response.json();
-
         if(!response.ok) {
             const message = data?.message || `HTTP error! status: ${response.status}`;
             throw new Error(message);
         }
+
+        data = await response.json();
+
     } catch (error) {
-        console.log(error);
         if(error.cause?.code === 'ENOTFOUND') {
             console.error("Error: Network failure. Please check your internet connection.");
         } else {
@@ -24,7 +23,7 @@ async function main(name) {
     }
 
     if(data.length === 0 ) {
-        console.log(`No recent activity found for user: ${username}`);
+        console.log(`No recent activity found for user: ${name}`);
         return;
     }
 
@@ -49,9 +48,12 @@ async function main(name) {
 
         switch (event.type) {
             case "PushEvent":
-                if(!reportedPushRepos.has()) {
+                if(!reportedPushRepos.has(repo)) {
                     const count = pushCommits[repo];
-                    console.log(`- Pushed ${count} commit${count !== 1 ? "s" : ""} to ${repo}`);
+
+                    if(count > 0) {
+                        console.log(`- Pushed ${count} commit${count !== 1 ? "s" : ""} to ${repo}`);
+                    }
                     reportedPushRepos.add(repo);
                 }
                 break;
@@ -61,7 +63,7 @@ async function main(name) {
                 break;
 
             case "CommitCommentEvent":
-                console.log(`-Commented on a commit in ${repo} `)
+                console.log(`- Commented on a commit in ${repo} `)
                 break;
 
             case "WatchEvent":
@@ -84,22 +86,6 @@ async function main(name) {
                 break;
             }
             
-
-            case "PullRequestEvent": {
-                const action = event.payload?.action;
-                const prTitle = event.payload?.pull_request?.title;
-
-                if(action === "opened") {
-                    console.log(`- Opened a new pull request in ${repo}${prTitle ? `: ${prTitle}`: ""}`)
-                } else if (action === "closed") {
-                    const merged = event.payload?.pull_request?.merged;
-                    console.log(`- ${merged ? "Merged" : "Closed"} a pull request in ${repo}${prTitle ? `:"${prTitle}"` : ""}`);
-                } else {
-                    console.log(`- ${action} a pull request in ${repo}`);
-                }
-                break;
-            
-            }
                 
             case "DeleteEvent": {
                 const refType = event.payload?.ref_type;
@@ -118,7 +104,71 @@ async function main(name) {
                 console.log(`- Forked ${repo} to ${forkee}`);
                 break;
             }
-            
+
+            case "GollumEvent": {
+                console.log(`- Updated the wiki in ${repo}`);
+                break;
+            }
+
+            case "IssuesEvent": {
+                const action = event.payload?.action;
+
+                if(action === "opened") {
+                    console.log(`- Opened a new issue in ${repo}`);
+                } else if (action === "closed") {
+                    console.log(`- Closed an issue in ${repo}`);
+                } else {
+                    console.log(`- ${action} an issue in ${repo}`);
+                }
+                break;
+            }
+
+
+            case "MemberEvent": {
+                const member = event.payload?.member?.login;
+                console.log(`- Added ${member || "a member"} to ${repo}`);
+                break;
+            }
+
+            case "PublicEvent": {
+                console.log(`- Made ${repo} public`);
+                break;
+            }
+
+            case "PullRequestEvent": {
+                const action = event.payload?.action;
+                const prTitle = event.payload?.pull_request?.title;
+
+                if(action === "opened") {
+                    console.log(`- Opened a new pull request in ${repo}${prTitle ? `: "${prTitle}"` : ""}`);
+                } else if (action === "closed") {
+                    const merged = event.payload?.pull_request?.merged;
+                    console.log(`- ${merged ? "Merged" : "Closed"} a pull request in ${repo}${prTitle ? `: "${prTitle}"` : ""}`);
+                } else {
+                    console.log(`- ${action} a pull request in ${repo}`);
+                }
+                break;
+            }
+
+            case "PullRequestReviewEvent": {
+                const state = event.payload?.review?.state;
+                console.log(`- Pull request has been reviwed and ${state} for ${repo}`);
+                break;
+            }
+
+            case "PullRequestReviewCommentEvent": {
+                const comment = event.payload?.comment?.body;
+                console.log(`- Pull request comment on ${repo} is "${comment}"`);
+                break;
+            }
+
+
+            case "ReleaseEvent": {
+                const tag = event.payload?.release?.tag_name;
+                console.log(`- Published a release${tag ? ` (${tag})` : ""} in ${repo}`);
+                break;
+            }
+          
             default:
                 console.log(`- ${event.type.replace("Event", "")} event in ${repo}`);
                 break;
