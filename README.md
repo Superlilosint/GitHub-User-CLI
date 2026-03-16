@@ -1,7 +1,7 @@
 # GitHub Activity CLI
 A simple CLI tool that pulls up the recent public activity of any GitHub user and prints it straight to your terminal. No external libraries just Node.js and the GitHub API.
 
-This is Sample solution for the [github-user-activity](https://roadmap.sh/projects/github-user-activity) challenge from [roadmap.sh](https://roadmap.sh/).
+
 
 ---
 
@@ -101,7 +101,8 @@ Recent GitHub activity for kamranahmedse:
 
 ## Project Source
  
-Built as part of the [GitHub User Activity](https://roadmap.sh/projects/github-user-activity) challenge on roadmap.sh.
+Built as part of the [GitHub User Activity](https://roadmap.sh/projects/github-user-activity) challenge on [roadmap.sh](https://roadmap.sh/).
+
 
 ## Note 
 
